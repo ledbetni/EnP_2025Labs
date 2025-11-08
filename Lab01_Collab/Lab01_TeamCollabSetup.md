@@ -92,9 +92,9 @@ and plan next steps.
 
 | Team Member | Last Week     | This Week       | Blockers |
 |-------------|---------------|-----------------|----------|
-|     Henry   |Cloned git repo|Wrote charter    | N/A      |
-|     Nick    |Cloned git repo|Made Kanban Board| N/A      |
-|     Atefeh  |Cloned git repo|Pushed commit    | N/A      |
+|     Henry   |Cloned git repo|Wrote charter    |  N/A     |
+|     Nick    |Cloned git repo|Made Kanban Board|  N/A     |
+|     Atefeh  |Cloned git repo|Pushed commit    |  N/A     |
 
 ### Guidelines
 
