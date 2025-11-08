@@ -27,27 +27,37 @@ editor_options:
 
 | Role                   | Name | Responsibilities                       |
 |------------------------|------|----------------------------------------|
-| Project Manager        |      | Coordinates work, updates board        |
-| Data Engineer          |      | Manages data imports, cleaning scripts |
-| Data Scientist         |      | Conducts EDA, visualization            |
-| Analyst / Communicator |      | Summarizes findings, writes reports    |
+| Project Manager        |Nick  | Coordinates work, updates board        |
+| Data Engineer          |Atefeh| Manages data imports, cleaning scripts |
+| Analyst / Communicator |Henry | Summarizes findings, writes reports    |
 
 ### Collaboration Policies
 
 Specify your collaboration policies here  -- your decision-making process (e.g., majority vote tech choices, consensus deliverables), WIP limits/person, Definition of Done (e.g., documented, peer-reviewed, reproducible), who reviews the work, etc.
+1) Any decisions that create conflict/disagreement will be resolved through a majority vote.
+2) A task is considered "done" if it is peer-reviewed and reproducible.
+3) Each team member will have no more than two active WIP items.
+4) Throughout the process, it is important that we follow all data privacy and confidentiality requirements.
 
 ### Communication means and cadence
 
-Be explicit about how you plan on communicating
+1) The primary channel of day-to-day communication will be through discord.
+2) Communication will be supplemented through weekly stand-up meetings.
+
 
 ### Performance metrics
 
-Propose 3-5 performance metrics you plan on using to assess if changes need to be made.
-
+1) Track the average cycle time it takes from task start to task completion for each team member.
+    - Increasing cycle time indicates overcommitment or unclear requirements.
+2) Track the percentage of code that pass peer review without major revisions
+    - Our target rate is 90% passing rate.
+3) Create a biweekly anonymous survey to be completed by teammates.
+    - High scores reflect a healthy team dynamic.
+    
 ### Completion Rituals
 
-How will you celebrate tasks completed?  
-
+We will write a weekly or biweekly recap for our team's progress that celebrates
+completed tasks, regardless of how big or small the "win" is.
 ------------------------------------------------------------------------
 
 ## 3 Board Setup
@@ -80,11 +90,11 @@ Backlog → To Do → In Progress → Review → Done
 A 10-minute synchronization ritual to share progress, identify blockers,
 and plan next steps.
 
-| Team Member | Yesterday | Today | Blockers |
-|-------------|-----------|-------|----------|
-|             |           |       |          |
-|             |           |       |          |
-|             |           |       |          |
+| Team Member | Last Week     | This Week       | Blockers |
+|-------------|---------------|-----------------|----------|
+|     Henry   |Cloned git repo|Wrote charter    | N/A      |
+|     Nick    |Cloned git repo|Made Kanban Board| N/A      |
+|     Atefeh  |Cloned git repo|Pushed commit    | N/A      |
 
 ### Guidelines
 
