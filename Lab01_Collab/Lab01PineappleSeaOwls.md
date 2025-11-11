@@ -108,7 +108,7 @@ A 10-minute synchronization ritual to share progress, identify blockers,
 and plan next steps.
 
 | Team Member | Last Week | This Week | Blockers |
-|------------------|------------------|------------------|-------------------|
+|------------------|------------------|------------------|--------------------|
 | Henry | Cloned repo, pushed commit, merged branch | Wrote charter | Had trouble pushing commit |
 | Nick | Cloned repo, pushed commit, merged branch, made Kanban board | Made Kanban Board | N/A |
 | Atefeh | Cloned repo, pushed commit, merged branch | Pushed commit | Had trouble merging branch |
