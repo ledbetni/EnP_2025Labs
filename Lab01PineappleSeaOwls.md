@@ -196,7 +196,11 @@ and plan next steps.
     structured communication so we're able to identify and solve
     blockers quickly.
 
--   Nick:
+-   Nick: My offical role is the Project Manager, though our roles may be more
+          fluid than they would be in a corporate setting. Having worked on many
+          teams in the past, I think that our team coordination is outstanding
+          so far. I am always happy to make myself available to discuss the
+          project or any technical blockers. 
 
 -   Atefeh:
 
@@ -210,7 +214,10 @@ and plan next steps.
     of communication because it allows us to see the progress of other
     team members.
 
--   Nick:
+-   Nick: Kanban is a great method to organize tasks, track progress, and 
+          visualize the work that needs to be done. It allows each team 
+          member to visually see the work that they have assigned to them,
+          and can provide an overview of progress for the entire team. 
 
 -   Atefeh:
 
@@ -225,7 +232,9 @@ and plan next steps.
     defined communication processes between team members and with
     clients will be helpful.
 
--   Nick:
+-   Nick: This general methodology of teambuilding is extremely similar
+          to teams that I have worked on both academically and professionally, 
+          I would not make any substantial improvements.
 
 -   Atefeh:
 
