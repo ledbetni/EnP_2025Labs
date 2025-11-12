@@ -177,6 +177,8 @@ and plan next steps.
 ## 6 Submission Checklist
 
 ☐ Screenshot of final Kanban board\
+<img width="1906" height="940" alt="image" src="https://github.com/user-attachments/assets/0b2ab8e1-c325-4d67-9d56-3b16227f4c29" />
+
 ☐ Finalized Team Charter (with revisions)\
 ☐ Reflection responses (Section 5)\
 
@@ -228,3 +230,4 @@ and plan next steps.
 -   Atefeh:
 
 ------------------------------------------------------------------------
+
