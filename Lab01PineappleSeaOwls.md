@@ -202,7 +202,11 @@ and plan next steps.
           so far. I am always happy to make myself available to discuss the
           project or any technical blockers. 
 
--   Atefeh:
+-   Atefeh: My role is Data Engineer. From this project, I’ve learned how much easier
+            team coordination is when everyone is clear about their responsibilities
+            but still flexible when the team needs it. I’ve also noticed that
+            open, frequent communication—especially about small uncertainties or
+            blockers—really helps keep problems from piling up later.
 
 2.  How did the Kanban system help (or hinder) your progress?
 
@@ -219,7 +223,11 @@ and plan next steps.
           member to visually see the work that they have assigned to them,
           and can provide an overview of progress for the entire team. 
 
--   Atefeh:
+-   Atefeh: I don’t really have any negative comments about using Kanban so far.
+    It’s been helping us keep things organized and in order. We can easily keep
+    track of the process, see what everyone is working on, and even be more prepared
+    for the next steps. I also like that it makes it clear what’s a priority and what’s
+    still waiting, which makes coordinating as a team a lot smoother.
 
 3.  What’s one improvement you would apply in a real consulting project?
 
@@ -236,7 +244,12 @@ and plan next steps.
           to teams that I have worked on both academically and professionally, 
           I would not make any substantial improvements.
 
--   Atefeh:
+-   Atefeh: One improvement I’d like to apply is setting a regular schedule to
+            meet—either in person or online—to talk through the project progress.
+            Having consistent check-ins would give us a better understanding of our
+            teammates’ priorities, help us catch any misunderstandings early, and make
+            sure we’re all aligned on next steps and deadlines.
 
 ------------------------------------------------------------------------
+
 
