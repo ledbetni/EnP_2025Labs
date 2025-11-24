@@ -175,7 +175,12 @@ According to the data dictionary, each row represents one bid line within an auc
 #Q3
 The primary keys are AUCTION_ID, PUBLISHER_ID, and DATE_UTC
 
-#Q4 
+#Q4
+Numerical Variables: PRICE, RESPONSE_TIME, DEVICE_GEO_LAT, DEVICE_GEO_LONG
+Categorical Variables: AUCTION_ID, PUBLISHER_ID, DEVICE_TYPE
+Suspicious Variables: PRICE (stored as char) and DEVICE_GEO_REGION (invalid state codes like "oregon) 
+
+#Q5 
 The first variable we expect to matter most to advertisers is price, or the cost advertisers are willing to pay to show their ad. This is an obvious choice for a relevant variable as it ultimately determines who wins a bid. In other words, price is a strong predictor of win probability. Secondly, we imagine that the ad slot size variable will be relevant to advertisers. This variable should be important because advertisers will adjust their bid strategy to specific ad formats.
 ------------------------------------------------------------------------
 
@@ -222,7 +227,7 @@ bids %>% filter(is.na(DEVICE_GEO_REGION) | DEVICE_GEO_REGION %in% c("", "oregon"
 
 ```
 #Q3 Interpretation:
-The region code in question that is clearly suspicious is the region code "oregon." The data dictionary specifies that region codes must be written as a standard USPS abbreviation. Therefore, if we are concerned with Oregon as a region, the code should be given as "OR" instead of "oregon." This clearly presents a data quality issue, and thus is suspicious.
+The region code in question that is clearly suspicious is the region code "oregon." The data dictionary specifies that region codes must be written as a standard USPS abbreviation. Therefore, if we are concerned with Oregon as a region, the code should be given as "OR" instead of "oregon." This clearly presents an issue, and thus is suspicious.
 
 ------------------------------------------------------------------------
 
@@ -264,7 +269,7 @@ bids %>% mutate(suspicious = PRICE <= 0 | PRICE > quantile(bids$PRICE, 0.99, na.
 bids %>% mutate(suspicious = PRICE <= 0 | PRICE > quantile(bids$PRICE, 0.99, na.rm = TRUE)) %>% group_by(DEVICE_GEO_ZIP, suspicious) %>% summarise(count = n(), .groups = "drop") %>% arrange(desc(count))
 ```
 #Q3 Interpretation:
-When looking at data grouped by region, we find that suspicious prices do seem to cluster by region. We generally see that regions containing suspicious or inconsistent region codes show more pricing anomalies than other regions. This suggests that frequency of suspicious pricing issues is positively correlated with quality issues in geographic data.
+When looking at data grouped by region, we find that suspicious prices do seem to cluster by region. We generally see that regions containing suspicious region codes show more pricing anomalies than other regions. This suggests that frequency of suspicious pricing issues is positively correlated with quality issues in geographic data.
 ------------------------------------------------------------------------
 
 ## 2.3 Response Time Behavior
@@ -288,7 +293,7 @@ head(bids$RESPONSE_TIME, 20)
 bids %>% count(RESPONSE_TIME) %>% arrange(desc(n)) %>% head(10)
 ```
 #Q3
-The clear issue we see with the RESPONSE_TIME variable is that it is stored as a character variable instead of a numeric variable, which makes direct statistical computations impossible. We can easily see that some values contain non-numeric symbols or shaky formatting. This suggests that the data must be cleaned and converted into a numeric variable before straightforward numerical analysis can be conducted.
+The clear issue we see with the RESPONSE_TIME variable is that it is stored as a character variable instead of a numeric variable, which makes direct statistical computations impossible. We can easily see that some values contain non-numeric symbols or shaky formatting. This suggests that the data must be cleaned, and RESPONSE_TIME should be converted into a numeric variable before straightforward numerical analysis can be conducted.
 
 ------------------------------------------------------------------------
 
@@ -340,7 +345,7 @@ ggplot(bids, aes(x = PRICE)) +
 There are many entries of PRICE data that are invalid according to the data dictionary, these must be removed to get a useful graph. 
 
 #Interpretation:
-Since the first histogram is cut off at the 99th percentile, suggesting that most bid prices are concentrated at relatively low price values, and suggests that we may have right-skewness in the data. In the second histogram, we see that we do in fact have a strongly right-skewed distribution. In this second histogram, we do not truncate the distribution at the 99th percentile, and thus we see a large tail of extreme outliers. The data dictionary dictates that we should remove many of these outliers, as these are "invalid." Therefore, to obtain a more accurate view of typical bidding behavior, these extreme outliers should be removed.
+Since the first histogram is cut off at the 99th percentile, it suggests that we may have right-skewness in the data. In the second histogram, we see that we do in fact have a strongly right-skewed distribution. In this second histogram, we do not stop the distribution at the 99th percentile, and thus we see a large tail of outliers. The data dictionary dictates that we should remove many of these outliers, as these are "invalid." Therefore, to obtain a more accurate view of typical bidding behavior, these extreme outliers should be removed.
 
 ------------------------------------------------------------------------
 
@@ -385,7 +390,7 @@ ggplot(city_price, aes(
   theme_minimal()
 ```
 #Interpretation:
-The plot shows the median bid prices across the top twenty cities. We chose the median instead of the mean as our desired statistic because we saw in 3.1 that the price distribution is highly right-skewed, and thus the mean would be distorted by the tail of extreme outliers. Cities that "stand out" with either very low or very high median values are highlighted red and labeled as suspicious. These suspicious cities indicate that there are potential data-quality issues, and thus further cleaning may be required.
+The plot shows the median bid prices across the top twenty cities. We chose the median instead of the mean as our desired statistic because we saw in 3.1 that the price distribution is highly right-skewed, and thus the mean would be distorted by the tail of extreme outliers. Cities that "stand out" with either very low or very high median values are highlighted red and labeled as suspicious. These suspicious cities indicate that further cleaning or manipulation of the data may be required.
 
 ------------------------------------------------------------------------
 
