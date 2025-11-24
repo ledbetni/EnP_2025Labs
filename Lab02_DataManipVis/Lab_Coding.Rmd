@@ -1,6 +1,6 @@
 ---
 title: "Lab02: Data Manipulation and Visualization with R"
-author: "TEAM NAME (edit this)"
+author: "Pineapple Seahawks"
 output:
   html_document:
     toc: true
@@ -135,11 +135,11 @@ Your code and reasoning must reflect **your own team’s understanding**.
 
 ```{r load-data}
 # TODO: Load packages and data here
-# Example structure (adjust paths/names to match the repo):
-# library(tidyverse)
-# library(arrow)
-# bids <- read_parquet("data/bids_data_vDTR.parquet")
-# glimpse(bids)
+#Example structure (adjust paths/names to match the repo):
+library(tidyverse)
+library(arrow)
+bids <- read_parquet("data/bids_data_vDTR.parquet")
+glimpse(bids)
 ```
 
 ------------------------------------------------------------------------
@@ -157,8 +157,26 @@ Answer the following in complete sentences. Use code chunks to support your answ
     -   suspicious or inconsistent with the dictionary?
 4.  Name **two variables** you expect to matter most to advertisers and explain why.
 
-*(Write your answers below.)*
+```{r setup, message=FALSE}
+library(tidyverse)
+library(arrow)
 
+bids <- read_parquet("data/bids_data_vDTR.parquet")
+```
+```{r q1}
+dim(bids)
+```
+#As shown above, there are 15 cols and 443969 rows
+
+#Q2
+
+*(Henry Answer here)*
+
+#Q3
+The primary keys are AUCTION_ID, PUBLISHER_ID, and DATE_UTC
+
+#Q4 
+*(Henry Answer here)*
 ------------------------------------------------------------------------
 
 # 2. Data Exploration Using `dplyr` (30–40 minutes)
@@ -176,10 +194,34 @@ Tasks:
 2.  Compare the region codes to what the data dictionary says they should look like.
 3.  Identify **at least one** region code that is clearly suspicious, and explain why.
 
+#Q1
 ```{r geo-explore}
-# TODO: your code for geographic exploration
+library(tidyverse)
+
+## Top regions
+bids %>% count(DEVICE_GEO_REGION, sort = TRUE) %>% slice_head(n = 3)
+
+```
+```{r geo-explore}
+library(tidyverse)
+
+## Top cities
+bids %>% count(DEVICE_GEO_CITY, sort = TRUE) %>% slice_head(n = 10)
+
 ```
 
+#Q2
+The region codes should all be explicitly written as "OR", however there are many region codes with an incorrect format. 
+
+#Q3
+```{r geo-explore}
+library(tidyverse)
+
+## Suspicious region code
+bids %>% filter(is.na(DEVICE_GEO_REGION) | DEVICE_GEO_REGION %in% c("", "oregon")) %>% count(DEVICE_GEO_REGION)
+
+```
+*(Henry Answer here)*
 *(Write your interpretation below.)*
 
 ------------------------------------------------------------------------
@@ -199,10 +241,29 @@ Tasks:
 
 Choose only one dimension and describe what you find.
 
+#Q1
 ```{r price-explore}
-# TODO: your code for exploring PRICE
+## Price is incorrectly being stored as char, so must convert to numerical.
+bids <- bids %>% mutate(PRICE = as.numeric(PRICE))
+summary(bids$PRICE)
+quantile(bids$PRICE, probs = c(0, 0.01, 0.05, 0.5, 0.95, 0.99, 1), na.rm = TRUE)
 ```
+#Q2
+```{r price-explore}
+## Price is incorrectly being stored as char, so must convert to numerical.
+bids %>% filter(PRICE <= 0 | PRICE > quantile(bids$PRICE, 0.99, na.rm = TRUE)) %>% count()
+```
+Above you see that there are 4552 price values that are lower than zero, or greater than the 99% quantile.
 
+```{r price-explore}
+## Suspicious prices by PUBLISER_ID
+bids %>% mutate(suspicious = PRICE <= 0 | PRICE > quantile(bids$PRICE, 0.99, na.rm = TRUE)) %>% group_by(PUBLISHER_ID, suspicious) %>% summarise(count = n(), .groups = "drop") %>% arrange(desc(count))
+## Suspicious prices by Region
+bids %>% mutate(suspicious = PRICE <= 0 | PRICE > quantile(bids$PRICE, 0.99, na.rm = TRUE)) %>% group_by(DEVICE_GEO_REGION, suspicious) %>% summarise(count = n(), .groups = "drop") %>% arrange(desc(count))
+## Suspicious prices by ZIP
+bids %>% mutate(suspicious = PRICE <= 0 | PRICE > quantile(bids$PRICE, 0.99, na.rm = TRUE)) %>% group_by(DEVICE_GEO_ZIP, suspicious) %>% summarise(count = n(), .groups = "drop") %>% arrange(desc(count))
+```
+*(Henry Answer here)*
 *(Write your interpretation below.)*
 
 ------------------------------------------------------------------------
@@ -216,11 +277,18 @@ Tasks:
 1.  Examine its data type and typical values.
 2.  Look for common patterns or prefixes/suffixes in the values.
 3.  Identify an issue that would prevent straightforward numerical analysis.
-
+#Q1
 ```{r rt-explore}
-# TODO: your code for exploring RESPONSE_TIME
+library(tidyverse)
+summary(bids$RESPONSE_TIME)
+head(bids$RESPONSE_TIME, 20)
 ```
-
+#Q2
+```{r rt-explore}
+# Show examples of problematic values
+bids %>% count(RESPONSE_TIME) %>% arrange(desc(n)) %>% head(10)
+```
+*(Henry Answer here (hint: the response times are chars, not nums currently*)
 *(Write your interpretation below.)*
 
 ------------------------------------------------------------------------
@@ -246,9 +314,33 @@ Create a visualization that reveals:
 -   Any issues you suspect based on the data dictionary
 
 ```{r plot-price}
-# TODO: your price distribution plot
-```
+# Convert price to numerical, create histogram between 0 and 99th percentile of PRICE.
+bids <- bids %>% mutate(PRICE = as.numeric(PRICE))
 
+ggplot(bids, aes(x = PRICE)) +
+  geom_histogram(binwidth = 0.01, boundary = 0) +
+  coord_cartesian(xlim = c(0, quantile(bids$PRICE, 0.99, na.rm = TRUE))) +
+  labs(
+    title = "Distribution of Bid Prices",
+    x = "Bid Price",
+    y = "Number of Auctions"
+  ) +
+  theme_minimal()
+
+# Histogram that includes that massive amount of outliers.
+ggplot(bids, aes(x = PRICE)) +
+  geom_histogram(binwidth = 0.01) +
+  labs(
+    title = "Distribution of Bid Prices",
+    x = "Bid Price",
+    y = "Number of Auctions"
+  ) +
+  theme_minimal()
+
+```
+There are many entries of PRICE data that are invalid according to the data dictionary, these must be removed to get a useful graph. 
+
+*(Henry Answer here)*
 *Interpretation (3–5 sentences):*
 
 ------------------------------------------------------------------------
@@ -264,9 +356,36 @@ Guidance:
 -   Highlight any cities whose price behavior appears inconsistent or suspicious.
 
 ```{r plot-price-region}
-# TODO: your price-by-region plot
-```
+library(tidyverse)
 
+# Convert price to numerical
+bids <- bids %>%
+  mutate(PRICE = as.numeric(PRICE))
+
+# median price by city and find suspicious cities
+city_price <- bids %>% group_by(DEVICE_GEO_CITY) %>% summarise(median_price = median(PRICE, na.rm = TRUE), n = n(), .groups = "drop") %>% arrange(desc(n)) %>% slice_head(n = 20) %>% mutate( suspicious = median_price < 0 | median_price > 1 | DEVICE_GEO_CITY == "NA" | is.na(DEVICE_GEO_CITY))
+
+# Plot median price by city, suspicious cities red, normal cities blue
+ggplot(city_price, aes(
+  x = reorder(DEVICE_GEO_CITY, median_price),
+  y = median_price,
+  fill = suspicious
+)) +
+  geom_col() +
+  scale_fill_manual(
+    values = c("FALSE" = "steelblue", "TRUE" = "red"),
+    labels = c("Normal", "Suspicious")
+  ) +
+  coord_flip() +
+  labs(
+    title = "Median Bid Price Across Top 20 Cities",
+    x = "City",
+    y = "Median Bid Price",
+    fill = "City Status"
+  ) +
+  theme_minimal()
+```
+*(Henry Answer here)*
 *Interpretation (3–5 sentences):*
 
 ------------------------------------------------------------------------
@@ -286,9 +405,27 @@ Possible ideas:
 Your plot should answer a clear question, and your interpretation should explain what you learned.
 
 ```{r plot-analyst-choice}
-# TODO: your analyst's choice plot
-```
+# Clean response time into a numeric
+bids <- bids %>% mutate( RESPONSE_TIME_NUM = as.numeric(str_remove(RESPONSE_TIME, "RESPONSE_TIME:\\s*")), PUBLISHER_ID = as.factor(PUBLISHER_ID), BID_WON = as.factor(BID_WON))
 
+# Compute median response time by publisher
+publisher_rt <- bids %>% group_by(PUBLISHER_ID) %>% summarise(median_rt = median(RESPONSE_TIME_NUM, na.rm = TRUE), n = n(), .groups = "drop") %>%  arrange(desc(n)) %>% slice_head(n = 15)
+
+# Plot median response time for publishers
+ggplot(publisher_rt, aes(
+  x = reorder(PUBLISHER_ID, median_rt),
+  y = median_rt
+)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Median Response Time by Top 15 Publishers",
+    x = "Publisher ID",
+    y = "Median Response Time (ms)"
+  ) +
+  theme_minimal()
+```
+*(Henry Answer here)*
 *Interpretation (3–5 sentences):*
 
 ------------------------------------------------------------------------
@@ -304,7 +441,7 @@ For each issue:
 -   Describe what the issue is.
 -   Provide evidence (e.g., from a summary, table, or plot).
 -   Suggest one way you would address it in a later **data cleaning** lab.
-
+*(Atefeh Answer here)*
 *(Write your answer here in paragraphs or bullet points.)*
 
 ------------------------------------------------------------------------
@@ -318,7 +455,7 @@ In 1–2 paragraphs, discuss how the issues you identified could affect:
 -   Predictive modeling.
 
 Which issues are most critical to fix before building models, and why?
-
+*(Atefeh Answer here)*
 *(Write your answer here.)*
 
 ------------------------------------------------------------------------
@@ -331,6 +468,6 @@ Write 5–8 sentences reflecting on:
 -   What worked well in your Git/gitHub workflow and team collaboration.
 -   One thing you would change next time to improve your process.
 -   Whether and how you used generative AI (if at all), and how it affected your understanding.
-
+*(Atefeh Answer here)*
 *(Write your reflection here.)*
 
