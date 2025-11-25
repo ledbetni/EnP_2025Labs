@@ -91,6 +91,9 @@ Upload a screenshot (I'll check the time and date of the file) of the Kanban boa
 -   Save it in your repository under: `planning/kanban_screenshot.png`
 
 -   Add it **here**.
+```{r}
+knitr::include_graphics("/planning/kanban_screenshot.png")
+```
 
 Make use of the team charter that you designed in Lab01, using the Kanban board throughout the project to keep you on task, correcting issues that arise and readjusting as needed.
 
