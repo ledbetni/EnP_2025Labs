@@ -448,9 +448,12 @@ For each issue:
 -   Describe what the issue is.
 -   Provide evidence (e.g., from a summary, table, or plot).
 -   Suggest one way you would address it in a later **data cleaning** lab.
-*(Atefeh Answer here)*
-*(Write your answer here in paragraphs or bullet points.)*
 
+1-Implausible / extreme bid prices: there are prices that are invalid (lower than zero, or very large) which is not realistic,for adressing it, we can mark it as wrong and remove it.
+
+2-Response_time variable: according the table which is a character variable instead of a numeric variable. For solving this issue we can easily convert them to numeric variables. 
+
+3-Inconsistent or missing geographic information like Region_code: in the Device_Geo_Region and city columns there are N/A values and many different ways of writing the same region. These should all be changed to the standard USPS two-letter codes. One way to fix this is to make a small lookup table that lists all the messy names (like "Oregon") and maps them to one clean code (like “OR”), then use that table to replace the values in the data    
 ------------------------------------------------------------------------
 
 ## 4.2 Implications for Analytics
@@ -462,9 +465,10 @@ In 1–2 paragraphs, discuss how the issues you identified could affect:
 -   Predictive modeling.
 
 Which issues are most critical to fix before building models, and why?
-*(Atefeh Answer here)*
-*(Write your answer here.)*
 
+If we don’t fix these data issues, they can really mess up business decisions and reports. For example, if regions are stored with different formats or as N/A, it might look like some areas have low activity just because their data is hidden in messy codes. That could make the company invest less in good markets or brag about performance that isn’t real. Advertisers would also get wrong reprots on prices, clicks, or response time and may lose trust in teh platform.
+
+For modeling, the biggest problems are wrong data types, crazy outliers, and bad or missing geography. If PRICE or RESPONSE_TIME are stored as text, or region codes are all over the place, the model will “learn” fake patterns instead of real behavior. So the most critical things to fix before building models are: convert key columns to the right type, standardize region codes, and remove or correct impossible values. Otherwise even a fancy model is built on a broken foundtion.
 ------------------------------------------------------------------------
 
 ## 4.3 Reflection: Tools, Workflow, AI Use
@@ -475,6 +479,7 @@ Write 5–8 sentences reflecting on:
 -   What worked well in your Git/gitHub workflow and team collaboration.
 -   One thing you would change next time to improve your process.
 -   Whether and how you used generative AI (if at all), and how it affected your understanding.
-*(Atefeh Answer here)*
-*(Write your reflection here.)*
+
+The most useful R tools in this lab were the tidyverse functions for cleaning and exploring the data, and ggplot2 for visualizing distributions and relationships, which made data quality problems easier to see. We also used generative AI to help us find useful R functions and example code when we got stuck. One thing that worked well in our Git/GitHub workflow was that we were usually available to discuss and share our questions as we worked, and we tried to talk through any problems instead of just getting stuck alone. Using GitHub made it easier to see each other’s changes and stay on the same page about the project. Overall, the whole proccess was satisfying, so we wouldn’t really change our process next time.
+
 
