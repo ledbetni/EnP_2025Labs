@@ -2,4 +2,10 @@
 .Rhistory
 .RData
 .Ruserdata
+<<<<<<< HEAD
 data/
+=======
+Lab02_DataManipvis/data/
+
+
+>>>>>>> 10a89b6e09e8c60327785db39e3b898eaff5a4ba
