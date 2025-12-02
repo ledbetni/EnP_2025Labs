@@ -1,7 +1,7 @@
 
 ---
 title: "Lab03: Data Cleaning with R"
-author: "TEAM NAME (edit this)"
+author: "Pineapple Seaowls"
 output:
   html_document:
     toc: true
@@ -65,7 +65,11 @@ You may want to keep the original as `bids_raw` and your working copy as `bids`.
 
 ```{r}
 # Your code here
-
+library(tidyverse)
+library(arrow)
+bids_raw <- read_parquet("../data/bids_data_vDTR.parquet")
+bids <- read_parquet("../data/bids_data_vDTR.parquet")
+glimpse(bids_raw)
 ```
 
 
@@ -108,7 +112,12 @@ You should investigate:
 > 1. Check the **type** of `PRICE` and inspect a sample of values (e.g., using `sample()` or `head()`).
 
 ```{r}
-# Your code here
+library(dplyr)
+class(bids$PRICE)
+summary(bids$PRICE)
+set.seed(123)
+sample(bids$PRICE, size=20)
+head(bids$PRICE)
 
 ```
 
@@ -116,6 +125,8 @@ You should investigate:
 >    - Is `PRICE` numeric or character?
 >    - Do you see obvious anomalies or strange values?
 
+        `PRICE` is a character value in the raw dataset.
+        There are no obvious strange values, though the dataset is large. I selected          a random sampling of 20 `PRICE` values, and they are all valid. The type should not be character, however. 
 
 ## Create a clean numeric version of PRICE
 
@@ -135,17 +146,21 @@ Create a **cleaned numeric version** (e.g., `PRICE_clean`) that:
 >    To learn about their use, type `?` before either of them (e.g., `?readr::parse_number()`)
 
 ```{r}
-# Your code here
-
+library(readr)
+library(dplyr)
+bids <- bids %>% mutate(PRICE_clean = parse_number(PRICE))
+summary(bids$PRICE_clean)
+class(bids$PRICE_clean)
 ```
 
 > 2. Count how many `NA`s you get in `PRICE_clean`. Explain why some values might be `NA` after parsing.
 
 
 ```{r}
-# Your code here
+sum(is.na(bids$PRICE_clean))
 
 ```
+There are no NA values after converting to numeric. Values could be NA if their character representation was not convertible to numeric. 
 
 
 ## Define and apply rules for impossible values
@@ -162,19 +177,30 @@ Now decide how to handle:
 
 
 ```{r}
-# Your code here
-
+summary(bids$PRICE_clean)
+quantile(bids$PRICE_clean, probs = seq(0,1,0.01), na.rm=TRUE)
+bids%>%filter(!is.na(PRICE_clean), PRICE_clean < 0) %>% head(20)
+p99 <- quantile(bids$PRICE_clean, 0.99, na.rm=TRUE)
+bids%>%filter(!is.na(PRICE_clean), PRICE_clean > p99) %>% head(20)
 ```
+Values such as -999 and 141.25 are 2 kinds of bad values. 
 
 > 2. Write down your **rules** for how to handle each type (e.g., set to `NA`, drop rows, cap values).
 > 3. Implement those rules in a new variable (e.g., `PRICE_final`) using `dplyr::mutate()` and `dplyr::case_when()`.
 
 ```{r}
-# Your code here
+library(dplyr)
+p99 <- quantile(bids$PRICE_clean, 0.99, na.rm=TRUE)
+bids <- bids %>% mutate(PRICE_final = case_when(PRICE_clean %in% c(-999, -99) ~ NA_real_, PRICE_clean < 0 ~NA_real_, PRICE_clean > p99 ~ p99, TRUE ~ PRICE_clean))
+
+summary(bids$PRICE_final)
 
 ```
 
 > 4. Briefly describe your rules in text and justify them using the **validity** and **completeness** dimensions of data quality.
+
+*HENRY FINISH*
+Negative values, sentinel codes, and impossibly high values will be set to NA.
 
 
 # Cleaning Categorical & String Fields (30–40 minutes)
@@ -200,7 +226,9 @@ Helpful string tools:
 > 1. Use `dplyr::count(DEVICE_GEO_REGION, sort = TRUE)` to list distinct region values and their frequencies.
 
 ```{r}
-# Your code here
+library(dplyr)
+library(stringr)
+bids%>%count(DEVICE_GEO_REGION, sort=TRUE)
 
 ```
 
@@ -208,7 +236,10 @@ Helpful string tools:
 
 
 ```{r}
-# Your code here
+library(dplyr)
+library(stringr)
+bids%>%count(DEVICE_GEO_REGION, sort=TRUE)
+
 
 ```
 
@@ -218,13 +249,17 @@ Helpful string tools:
 
 
 ```{r}
-# Your code here
+bids<-bids%>% mutate(DEVICE_GEO_REGION_clean = case_when(str_detect(DEVICE_GEO_REGION, "OR") ~ "OR", str_detect(DEVICE_GEO_REGION, "Or") ~ "OR", str_detect(DEVICE_GEO_REGION, "oregon") ~ "OR", str_detect(DEVICE_GEO_REGION, "xor") ~ "OR", TRUE ~ NA_character_))
+
+bids %>% count(DEVICE_GEO_REGION_clean, sort=TRUE)
 
 ```
 
 > 4. In **2–3 sentences**, explain:
 >    - How you detected inconsistent codes,
 >    - The **set-membership rule** you are enforcing (valid region codes for this dataset).
+
+*HENRY FINISH*
 
 ## DEVICE_GEO_ZIP: formats and sentinels
 
@@ -236,7 +271,9 @@ Treat ZIP codes as **strings**, not numbers.
 
 
 ```{r}
-# Your code here
+bids<-bids%>% mutate(DEVICE_GEO_ZIP_char = as.character(DEVICE_GEO_ZIP))
+
+bids%>%count(DEVICE_GEO_ZIP_char, sort=TRUE) %>% head(30)
 
 ```
 
@@ -246,7 +283,9 @@ Treat ZIP codes as **strings**, not numbers.
 >    - Non-digit characters.
 
 ```{r}
-# Your code here
+bids%>% mutate(ZIP_trim = str_trim(DEVICE_GEO_ZIP_char), ZIP_len=str_length(ZIP_trim), ZIP_digits=str_detect(ZIP_trim, "^[0-9]+$"))%>%summarise(min_len=min(ZIP_len, na.rm=TRUE), max_len=max(ZIP_len,na.rm=TRUE), non_digit_count=sum(!ZIP_digits,na.rm=TRUE))
+
+bids%>%filter(DEVICE_GEO_ZIP_char %in% c("-999", "9999", "00000", "99999"))%>% count(DEVICE_GEO_ZIP_char)
 
 ```
 
@@ -254,7 +293,9 @@ Treat ZIP codes as **strings**, not numbers.
 >    - Consider using `stringr::str_length()`, `stringr::str_detect()` with a regular expression pattern, and `stringr::str_pad()` if necessary.
 
 ```{r}
-# Your code here
+bids<- bids%>%mutate(ZIP_trim=DEVICE_GEO_ZIP_char %>% as.character() %>% str_trim(), DEVICE_GEO_ZIP_clean = case_when(str_detect(ZIP_trim, "^97[0-9]{3}$") ~ ZIP_trim, TRUE ~ NA_character_))
+
+bids%>% count(DEVICE_GEO_ZIP_clean, sort=TRUE) %>% head(20)
 
 ```
 
@@ -264,12 +305,16 @@ Treat ZIP codes as **strings**, not numbers.
 >    - Enforces your chosen ZIP pattern.
 
 ```{r}
-# Your code here
+bids<- bids%>%mutate(ZIP_trim=DEVICE_GEO_ZIP_char %>% as.character() %>% str_trim(), DEVICE_GEO_ZIP_clean = case_when(str_detect(ZIP_trim, "^97[0-9]{3}$") ~ ZIP_trim, TRUE ~ NA_character_))
+
+bids%>% count(DEVICE_GEO_ZIP_clean, sort=TRUE) %>% head(20)
 
 ```
 
 > 5. In a short paragraph, describe your rule and why it is reasonable given the context (Oregon-only data).
 
+*HENRY FINISH*
+Valid Oregon zip codes are 5 digits and have pattern "97xxx". All others are NA.
 
 ## RESPONSE_TIME: prefixes and extra characters
 
@@ -284,7 +329,8 @@ The `RESPONSE_TIME` variable may include:
 > 1. Use a small `sample()` of `RESPONSE_TIME` to inspect the raw patterns.
 
 ```{r}
-# Your code here
+set.seed(123)
+sample(bids$RESPONSE_TIME, size=20)
 
 ```
 
@@ -295,18 +341,25 @@ The `RESPONSE_TIME` variable may include:
 > 3. Implement your rule in a cleaned variable (e.g., `RESPONSE_TIME_clean`) using `stringr::str_replace()` or related functions and `as.numeric()`.
 
 ```{r}
-# Your code here
+bids <- bids%>% mutate(RESPONSE_TIME_char = as.character(RESPONSE_TIME), RESPONSE_TIME_trim = str_trim(RESPONSE_TIME_char), RESPONSE_TIME_strip = str_replace(RESPONSE_TIME_trim, "^[^0-9.-]*", ""), RESPONSE_TIME_str=str_replace(RESPONSE_TIME_strip, "[^0-9.-]+$", ""), RESPONSE_TIME_clean = as.numeric(RESPONSE_TIME_str))
+
+summary(bids$RESPONSE_TIME_clean)
 
 ```
 
 > 4. Count how many `NA`s you get in `RESPONSE_TIME_clean` and briefly interpret what those `NA`s mean.
 
 ```{r}
-# Your code here
+na_response <- sum(is.na(bids$RESPONSE_TIME_clean))
+na_response
+
 
 ```
+*HENRY FINISH*
 
 > 5. Connect this to the idea of **regular-expression patterns** as a tool for enforcing validity.
+
+*HENRY FINISH (Regular expressions like ^[^0-9.-] allow parsing of specific characters in specific patterns* 
 
 # Date–Time Cleaning: TIMESTAMP (20–30 minutes)
 
@@ -325,20 +378,27 @@ Useful tools:
 > 1. Look at a small random sample of `TIMESTAMP` values.
 
 ```{r}
-# Your code here
+library(dplyr)
+library(stringr)
+library(lubridate)
+
+set.seed(123)
+sample(bids$TIMESTAMP,size=20)
 
 ```
 
 > 2. Use `stringr::str_detect()` to count how many timestamps use `"-"` versus `"/"` in the date.
 
 ```{r}
-# Your code here
+bids<-bids%>%mutate(TIMESTAMP_char = as.character(TIMESTAMP))
+
+bids%>%summarise(num_dash=sum(str_detect(TIMESTAMP_char, "-"), na.rm=TRUE), num_slash=sum(str_detect(TIMESTAMP_char, "/"), na.rm=TRUE))
 
 ```
 
 > 3. Summarize in 1–2 sentences what you observe.
 
-
+*HENRY FINISH*
 
 ## Parse TIMESTAMP into a POSIXct variable
 
@@ -349,21 +409,23 @@ Useful tools:
 >    - Specify a time zone (e.g., `"UTC"`).
 
 ```{r}
-# Your code here
+bids<-bids%>% mutate(TIMESTAMP_clean = parse_date_time(TIMESTAMP_char, orders = c("ymd HMS", "ymd HM", "mdy HMS", "mdy HM"), tz="UTC"))
 
 ```
 
 > 2. Count how many `NA`s result from parsing.
 
 ```{r}
-# Your code here
+sum(is.na(bids$TIMESTAMP_clean))
+
 
 ```
 
 > 3. Use `summary()` or `range()` to examine the minimum and maximum of `TIMESTAMP_clean`.
 
 ```{r}
-# Your code here
+summary(bids$TIMESTAMP_clean)
+range(bids$TIMESTAMP_clean, na.rm = TRUE)
 
 ```
 
@@ -371,6 +433,7 @@ Useful tools:
 >    - Whether the time range seems reasonable,
 >    - What kinds of entries failed to parse (if any).
 
+*HENRY FINISH (entires that failed to parse didnt abide the time format standards above)*
 # Keys, Duplicates, and Out-of-Range Values (20–30 minutes)
 
 ## Candidate keys and duplicates
@@ -383,14 +446,17 @@ Using your earlier reasoning:
 > 2. Use `dplyr::count()` to check whether that key is truly unique or if there are duplicates.
 
 ```{r}
-# Your code here
+bids %>% count(AUCTION_ID) %>% filter(n>1)
 
 ```
 
 > 3. Check for **full-row duplicates** using `dplyr::distinct()` or by counting occurrences across all columns.
 
 ```{r}
-# Your code here
+bids_dup <- bids %>% count(across(everything()), name="n") %>% filter(n>1)
+nrow(bids_dup)
+sum(bids_dup$n - 1)
+bids_dup %>% head()
 
 ```
 
@@ -401,11 +467,14 @@ Using your earlier reasoning:
 > 5. Implement your rule and create a de-duplicated dataset (e.g., `bids_nodup`).
 
 ```{r}
-# Your code here
-
+bids_nodup<- bids %>% distinct()
+nrow(bids)
+nrow(bids_nodup)
+bids_nodup %>% count(across(everything()), name="n") %>% filter(n>1)
 ```
 
 > 6. In 2–3 sentences, explain your choice and connect it to the **uniqueness** dimension of data quality.
+*HENRY FINISH (full row duplicates dropped, leaving 1 copy. Same auction ID with different values kept)*
 
 ## Out-of-range latitude/longitude (optional but recommended)
 
@@ -416,21 +485,26 @@ Look at `DEVICE_GEO_LAT` and `DEVICE_GEO_LONG`.
 > 1. Use `summary()` or `dplyr::summarise()` to get the minimum and maximum latitude and longitude.
 
 ```{r}
-# Your code here
+bids %>% summarise(min_lat = min(DEVICE_GEO_LAT, na.rm=TRUE), max_lat = max(DEVICE_GEO_LAT, na.rm=TRUE), min_long = min(DEVICE_GEO_LONG, na.rm=TRUE), max_long = max(DEVICE_GEO_LONG, na.rm=TRUE))
+
+## Lat looks roughly valid, long valid ranges from (-124 to -116)
 
 ```
 
 > 2. Compare the ranges to what you know about **Oregon’s** geographic coordinates (you can approximate based on general US geography; no need for exact boundaries).
 
 ```{r}
-# Your code here
+lat_min <- 42
+lat_max <- 47
+long_min <- -125
+long_max <- -116
 
 ```
 
 > 3. Decide which coordinates are clearly **implausible**.
 
 ```{r}
-# Your code here
+bids %>% filter(DEVICE_GEO_LONG < long_min) %>% select(DEVICE_GEO_LAT,DEVICE_GEO_LONG) %>%arrange(DEVICE_GEO_LONG)
 
 ```
 
@@ -439,11 +513,20 @@ Look at `DEVICE_GEO_LAT` and `DEVICE_GEO_LONG`.
 >    - Implausible values are set to `NA` or corresponding rows are removed.
 
 ```{r}
-# Your code here
+lat_min <- 42
+lat_max <- 47
+long_min <- -125
+long_max <- -116
+
+bids<- bids%>% mutate( DEVICE_GEO_LAT_clean = if_else(!is.na(DEVICE_GEO_LAT) & DEVICE_GEO_LAT >= lat_min & DEVICE_GEO_LAT <= lat_max, DEVICE_GEO_LAT,NA_real_), DEVICE_GEO_LONG_clean = if_else(!is.na(DEVICE_GEO_LONG) & DEVICE_GEO_LONG >= long_min & DEVICE_GEO_LONG <= long_max, DEVICE_GEO_LONG, NA_real_))
+
+bids %>% summarise(min_lat_clean = min(DEVICE_GEO_LAT_clean, na.rm=TRUE), max_lat_clean = max(DEVICE_GEO_LAT_clean, na.rm=TRUE), min_long_clean = min(DEVICE_GEO_LONG_clean, na.rm=TRUE), max_long_clean = max(DEVICE_GEO_LONG_clean, na.rm=TRUE))
 
 ```
 
 > 5. Document the rules you used and why.
+
+*HENRY FINISH (removed values outside oregon boundaries)*
 
 # Creating a Final Cleaned Dataset (10–15 minutes)
 
@@ -456,14 +539,21 @@ Now pull everything together.
 >    - Drops unnecessary intermediate columns (e.g., `_raw`, helper strings) that you don’t need for analysis.
 
 ```{r}
-# Your code here
+bids_clean<- bids %>% select(AUCTION_ID, TIMESTAMP_clean, DATE_UTC, PUBLISHER_ID, DEVICE_TYPE, DEVICE_GEO_CITY, DEVICE_GEO_REGION_clean, DEVICE_GEO_ZIP_clean, DEVICE_GEO_LAT_clean, DEVICE_GEO_LONG_clean, PRICE_final, REQUESTED_SIZES, SIZE, RESPONSE_TIME_clean,BID_WON)
+
+glimpse(bids_clean)
+
+bids %>%count(across(everything()), name = "n") %>%filter(n > 1)
+
+bids_final <- bids_clean%>% distinct()
+glimpse(bids_final)
 
 ```
 
 > 2. Check the structure of `bids_clean` with `dplyr::glimpse()`.
 
 ```{r}
-# Your code here
+glimpse(bids_final)
 
 ```
 
