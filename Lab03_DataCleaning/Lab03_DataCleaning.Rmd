@@ -1,4 +1,3 @@
-
 ---
 title: "Lab03: Data Cleaning with R"
 author: "Pineapple Seaowls"
@@ -22,14 +21,14 @@ knitr::opts_chunk$set(
 
 In this lab, you will **continue working with the web advertising bids data** to:
 
-- Systematically **detect** and **repair** some other data quality problems using those ideas.
-- Create a **cleaned version** of the dataset (e.g., `bids_clean`).
-- Document your work in a **data cleaning log**.
+-   Systematically **detect** and **repair** some other data quality problems using those ideas.
+-   Create a **cleaned version** of the dataset (e.g., `bids_clean`).
+-   Document your work in a **data cleaning log**.
 
 By the end, you should have:
 
-1. A data set with the majority of the insidious issues corrected.
-2. A short narrative (or table) explaining **what you fixed** and **how**.
+1.  A data set with the majority of the insidious issues corrected.
+2.  A short narrative (or table) explaining **what you fixed** and **how**.
 
 > *Work in the **same repository** as previous labs. Update your Jira Kanban board with new cards for this lab and keep committing your progress with clear messages.*
 
@@ -44,10 +43,10 @@ library(tidyverse)
 library(arrow)
 ```
 
-- `tidyverse` (especially `dplyr`, `ggplot2`, `readr`, `stringr`)
-- `stringr` to modify character strings
-- `lubridate` for date–time parsing
-- `arrow` if you are reading/writing Parquet files
+-   `tidyverse` (especially `dplyr`, `ggplot2`, `readr`, `stringr`)
+-   `stringr` to modify character strings
+-   `lubridate` for date–time parsing
+-   `arrow` if you are reading/writing Parquet files
 
 > **Task:** In a code chunk, load the packages you need.
 
@@ -57,9 +56,9 @@ Use the **same dataset** as in the earlier lab (e.g., a Parquet file in your `da
 
 > **Tasks:**
 >
-> 1. Read the messy data into R (e.g., using `arrow::read_parquet()` or `readr` functions, depending on your file).
-> 2. Use `dplyr::glimpse()` and/or `summary()` to remind yourselves what variables are present and roughly what they look like.
-> 3. Create a **working copy** of the data so that you can always go back to the original if needed.
+> 1.  Read the messy data into R (e.g., using `arrow::read_parquet()` or `readr` functions, depending on your file).
+> 2.  Use `dplyr::glimpse()` and/or `summary()` to remind yourselves what variables are present and roughly what they look like.
+> 3.  Create a **working copy** of the data so that you can always go back to the original if needed.
 
 You may want to keep the original as `bids_raw` and your working copy as `bids`.
 
@@ -72,18 +71,23 @@ bids <- read_parquet("../data/bids_data_vDTR.parquet")
 glimpse(bids_raw)
 ```
 
-
 # Quick Orientation Check (10–15 minutes)
 
 Using your prior lab work and Data Cleaning lectures:
 
-1. In **2–4 sentences**, describe **what each row** in this dataset represents.
-2. Identify **one or two variables** that you think should be:
-   - **Mandatory** (must not be missing), and
-   - Possibly a **unique key** or part of a composite key.
-3. Pick **two variables** and, for each, assign at least one **data quality dimension** (e.g., completeness, validity, consistency, uniqueness, cross-field consistency).
+1.  In **2–4 sentences**, describe **what each row** in this dataset represents.
+2.  Identify **one or two variables** that you think should be:
+    -   **Mandatory** (must not be missing), and
+    -   Possibly a **unique key** or part of a composite key.
+3.  Pick **two variables** and, for each, assign at least one **data quality dimension** (e.g., completeness, validity, consistency, uniqueness, cross-field consistency).
 
 > **Write your answers directly in this Rmd in a text section (not code).**
+
+1.  We have already defined in the previous lab that each row in the data set refers to one bid line within an auction. It should be noted that several rows can contain the same AUCTION_ID, as an auction may have multiple bidders or seats. The row records device geographic information, the bidder's CPM price, the bids response time, and whether the bid won (among other variables).
+
+2.  The two variables we see are absolutely mandatory are PRICE and BID_WON. Both of these variables are essential because most analyses require knowing the CPM and whether the bid won or not to be effective. Additionally, it appears that AUCTION_ID, size, and bidder/seat create a composite key. Since each auction could have multiple bidders and sizes, the combination of AUCTION_ID, size, and bidder/seat can uniquely identify a row, thus creating a potential composite key.
+
+3.  The first variable in question is actually 2 variables, but they have the same structure: DEVICE_GEO_LAT and DEVICE_GEO_LONG. These geographic coordinates should be evaluated for validity, as latitudes and longitudes must fall within real geographic bounds. These should also be evaluated for completeness because missing coordinates would create issues in geographic analyses. The second variable in question is PRICE. The PRICE variable should also be evaluated for validity to ensure that CPM values are non-negative and fall below \$500 (as per data dictionary). Additionally, PRICE should be evaluated for cross-field consistency, because if BID_WON = TRUE, then the winning PRICE should be the maximum for the respective auction.
 
 # Fixing Numeric & Price Issues (30–40 minutes)
 
@@ -91,25 +95,25 @@ Focus on the **PRICE** variable (and other numeric variables if needed).
 
 You should investigate:
 
-- **Type issues** (e.g., stored as character instead of numeric),
-- **Impossible values** (negative values, weird “huge” values),
-- **Sentinel codes** (e.g., `-999`),
-- Extra non-numeric characters.
+-   **Type issues** (e.g., stored as character instead of numeric),
+-   **Impossible values** (negative values, weird “huge” values),
+-   **Sentinel codes** (e.g., `-999`),
+-   Extra non-numeric characters.
 
 ## Suggested tools
 
-- `class()`, `unique()`, `dplyr::count()`, `summary()`
-- `readr::parse_number()`
-- `as.numeric()`
-- `dplyr::mutate()`, `dplyr::case_when()`
-- `is.na()`, `sum(is.na(...))`
-- `quantile()` to inspect distributions
+-   `class()`, `unique()`, `dplyr::count()`, `summary()`
+-   `readr::parse_number()`
+-   `as.numeric()`
+-   `dplyr::mutate()`, `dplyr::case_when()`
+-   `is.na()`, `sum(is.na(...))`
+-   `quantile()` to inspect distributions
 
 ## Inspect PRICE
 
 > **Tasks:**
 >
-> 1. Check the **type** of `PRICE` and inspect a sample of values (e.g., using `sample()` or `head()`).
+> 1.  Check the **type** of `PRICE` and inspect a sample of values (e.g., using `sample()` or `head()`).
 
 ```{r}
 library(dplyr)
@@ -121,29 +125,29 @@ head(bids$PRICE)
 
 ```
 
-> 2. In short sentences, describe what you see:
->    - Is `PRICE` numeric or character?
->    - Do you see obvious anomalies or strange values?
+> 2.  In short sentences, describe what you see:
+>     -   Is `PRICE` numeric or character?
+>     -   Do you see obvious anomalies or strange values?
 
-        `PRICE` is a character value in the raw dataset.
-        There are no obvious strange values, though the dataset is large. I selected          a random sampling of 20 `PRICE` values, and they are all valid. The type should not be character, however. 
+`PRICE` is a character value in the raw dataset. There are no obvious strange values, though the dataset is large. I selected a random sampling of 20 `PRICE` values, and they are all valid. The type should not be character, however.
 
 ## Create a clean numeric version of PRICE
 
 Create a **cleaned numeric version** (e.g., `PRICE_clean`) that:
 
-- Extracts numeric content from strings (if necessary),
-- Converts to numeric,
-- Keeps track of values that cannot be converted (they will become `NA`).
+-   Extracts numeric content from strings (if necessary),
+-   Converts to numeric,
+-   Keeps track of values that cannot be converted (they will become `NA`).
 
 > **Tasks:**
 >
-> 1. Use one or more of these:
->    - `readr::parse_number()`
->    - `stringr::str_remove_all()`
->    - `as.numeric()`
+> 1.  Use one or more of these:
 >
->    To learn about their use, type `?` before either of them (e.g., `?readr::parse_number()`)
+>     -   `readr::parse_number()`
+>     -   `stringr::str_remove_all()`
+>     -   `as.numeric()`
+>
+>     To learn about their use, type `?` before either of them (e.g., `?readr::parse_number()`)
 
 ```{r}
 library(readr)
@@ -153,28 +157,26 @@ summary(bids$PRICE_clean)
 class(bids$PRICE_clean)
 ```
 
-> 2. Count how many `NA`s you get in `PRICE_clean`. Explain why some values might be `NA` after parsing.
-
+> 2.  Count how many `NA`s you get in `PRICE_clean`. Explain why some values might be `NA` after parsing.
 
 ```{r}
 sum(is.na(bids$PRICE_clean))
 
 ```
-There are no NA values after converting to numeric. Values could be NA if their character representation was not convertible to numeric. 
 
+There are no NA values after converting to numeric. Values could be NA if their character representation was not convertible to numeric.
 
 ## Define and apply rules for impossible values
 
 Now decide how to handle:
 
-- Negative prices,
-- Very large prices that are implausible,
-- Sentinel codes (like `-999`).
+-   Negative prices,
+-   Very large prices that are implausible,
+-   Sentinel codes (like `-999`).
 
 > **Tasks:**
 >
-> 1. Use `dplyr::filter()` and summaries (`summary()`, `quantile()`) to identify at least **two kinds** of “bad” price values.
-
+> 1.  Use `dplyr::filter()` and summaries (`summary()`, `quantile()`) to identify at least **two kinds** of “bad” price values.
 
 ```{r}
 summary(bids$PRICE_clean)
@@ -183,10 +185,14 @@ bids%>%filter(!is.na(PRICE_clean), PRICE_clean < 0) %>% head(20)
 p99 <- quantile(bids$PRICE_clean, 0.99, na.rm=TRUE)
 bids%>%filter(!is.na(PRICE_clean), PRICE_clean > p99) %>% head(20)
 ```
-Values such as -999 and 141.25 are 2 kinds of bad values. 
 
-> 2. Write down your **rules** for how to handle each type (e.g., set to `NA`, drop rows, cap values).
-> 3. Implement those rules in a new variable (e.g., `PRICE_final`) using `dplyr::mutate()` and `dplyr::case_when()`.
+Values such as -999 and 141.25 are 2 kinds of bad values.
+
+> 2.  Write down your **rules** for how to handle each type (e.g., set to `NA`, drop rows, cap values).
+
+Our first rule is that any sentinel codes as well as any negative price values are invalid and should be set to NA. Our second rule is that prices above the 99th percentile will be excluded from our analysis. All remaining prices will be kept as they are.
+
+> 3.  Implement those rules in a new variable (e.g., `PRICE_final`) using `dplyr::mutate()` and `dplyr::case_when()`.
 
 ```{r}
 library(dplyr)
@@ -197,33 +203,31 @@ summary(bids$PRICE_final)
 
 ```
 
-> 4. Briefly describe your rules in text and justify them using the **validity** and **completeness** dimensions of data quality.
+> 4.  Briefly describe your rules in text and justify them using the **validity** and **completeness** dimensions of data quality.
 
-*HENRY FINISH*
-Negative values, sentinel codes, and impossibly high values will be set to NA.
-
+We treated negative values and sentinel codes as invalid, so they were set to "NA." These were set to NA because they violate the validity rules for CPM prices (0 < CPM < 500). We also decided to constrict the analysis to exclude values above the 99th percentile. While these values are numeric, they are so large that they could distort the analysis. Therefore, the analysis is capped at the 99th percentile. Although these decisions slightly decrease completeness, they aim to greatly improve validity.
 
 # Cleaning Categorical & String Fields (30–40 minutes)
 
 Now work on **categorical** and **string** variables, such as:
 
-- `DEVICE_GEO_REGION`
-- `DEVICE_GEO_ZIP`
-- `RESPONSE_TIME`
+-   `DEVICE_GEO_REGION`
+-   `DEVICE_GEO_ZIP`
+-   `RESPONSE_TIME`
 
 Remember: **this dataset only includes bids from Oregon**, so a correct region should be coded as `"OR"`. Other values in `DEVICE_GEO_REGION` represent **modified/mangled versions** of `"OR"`.
 
 Helpful string tools:
 
-- `stringr::str_trim()`, `stringr::str_to_upper()`, `stringr::str_replace()`
-- `stringr::str_detect()`, `stringr::str_pad()`, `stringr::str_length()`
-- `dplyr::count()` to see category frequencies
+-   `stringr::str_trim()`, `stringr::str_to_upper()`, `stringr::str_replace()`
+-   `stringr::str_detect()`, `stringr::str_pad()`, `stringr::str_length()`
+-   `dplyr::count()` to see category frequencies
 
 ## DEVICE_GEO_REGION: standardizing Oregon codes
 
 > **Tasks:**
 >
-> 1. Use `dplyr::count(DEVICE_GEO_REGION, sort = TRUE)` to list distinct region values and their frequencies.
+> 1.  Use `dplyr::count(DEVICE_GEO_REGION, sort = TRUE)` to list distinct region values and their frequencies.
 
 ```{r}
 library(dplyr)
@@ -232,8 +236,7 @@ bids%>%count(DEVICE_GEO_REGION, sort=TRUE)
 
 ```
 
-> 2. Identify **all values** that clearly correspond to **Oregon**, just coded inconsistently (e.g., extra punctuation, different case, misspellings).
-
+> 2.  Identify **all values** that clearly correspond to **Oregon**, just coded inconsistently (e.g., extra punctuation, different case, misspellings).
 
 ```{r}
 library(dplyr)
@@ -243,10 +246,9 @@ bids%>%count(DEVICE_GEO_REGION, sort=TRUE)
 
 ```
 
-> 3. Define a **standard representation** (`"OR"`) and create a cleaned version (e.g., `DEVICE_GEO_REGION_clean`) where:
->    - All Oregon variants are standardized to `"OR"`.
->    - Other values (if any) are treated according to a rule you decide (e.g., set to `NA` if they cannot be interpreted as Oregon).
-
+> 3.  Define a **standard representation** (`"OR"`) and create a cleaned version (e.g., `DEVICE_GEO_REGION_clean`) where:
+>     -   All Oregon variants are standardized to `"OR"`.
+>     -   Other values (if any) are treated according to a rule you decide (e.g., set to `NA` if they cannot be interpreted as Oregon).
 
 ```{r}
 bids<-bids%>% mutate(DEVICE_GEO_REGION_clean = case_when(str_detect(DEVICE_GEO_REGION, "OR") ~ "OR", str_detect(DEVICE_GEO_REGION, "Or") ~ "OR", str_detect(DEVICE_GEO_REGION, "oregon") ~ "OR", str_detect(DEVICE_GEO_REGION, "xor") ~ "OR", TRUE ~ NA_character_))
@@ -255,11 +257,11 @@ bids %>% count(DEVICE_GEO_REGION_clean, sort=TRUE)
 
 ```
 
-> 4. In **2–3 sentences**, explain:
->    - How you detected inconsistent codes,
->    - The **set-membership rule** you are enforcing (valid region codes for this dataset).
+> 4.  In **2–3 sentences**, explain:
+>     -   How you detected inconsistent codes,
+>     -   The **set-membership rule** you are enforcing (valid region codes for this dataset).
 
-*HENRY FINISH*
+We were able to identify inconsistent region codes by counting the distinct region values and their frequencies. We looked for entries that resembled the desired code "OR" but included small differences such as capitalization issues or extra characters. Since we know the entire data set is concerned with Oregon only, we created a set-membership rule where the only valid region code for this data set is "OR." The values mentioned above (e.g. "xor", "Or", "oregon") were set to "OR", and any value that could not be interpreted as a variation of the Oregon code was set to NA.
 
 ## DEVICE_GEO_ZIP: formats and sentinels
 
@@ -267,8 +269,7 @@ Treat ZIP codes as **strings**, not numbers.
 
 > **Tasks:**
 >
-> 1. Convert ZIP codes to character and use `dplyr::count()` to inspect common values.
-
+> 1.  Convert ZIP codes to character and use `dplyr::count()` to inspect common values.
 
 ```{r}
 bids<-bids%>% mutate(DEVICE_GEO_ZIP_char = as.character(DEVICE_GEO_ZIP))
@@ -277,10 +278,10 @@ bids%>%count(DEVICE_GEO_ZIP_char, sort=TRUE) %>% head(30)
 
 ```
 
-> 2. Identify suspicious ZIP values:
->    - Too short / too long,
->    - Obvious sentinel codes (e.g., `-999`, `9999`),
->    - Non-digit characters.
+> 2.  Identify suspicious ZIP values:
+>     -   Too short / too long,
+>     -   Obvious sentinel codes (e.g., `-999`, `9999`),
+>     -   Non-digit characters.
 
 ```{r}
 bids%>% mutate(ZIP_trim = str_trim(DEVICE_GEO_ZIP_char), ZIP_len=str_length(ZIP_trim), ZIP_digits=str_detect(ZIP_trim, "^[0-9]+$"))%>%summarise(min_len=min(ZIP_len, na.rm=TRUE), max_len=max(ZIP_len,na.rm=TRUE), non_digit_count=sum(!ZIP_digits,na.rm=TRUE))
@@ -289,8 +290,8 @@ bids%>%filter(DEVICE_GEO_ZIP_char %in% c("-999", "9999", "00000", "99999"))%>% c
 
 ```
 
-> 3. Decide on a **pattern** for valid ZIP codes (e.g., Oregon 5-digit ZIPs).
->    - Consider using `stringr::str_length()`, `stringr::str_detect()` with a regular expression pattern, and `stringr::str_pad()` if necessary.
+> 3.  Decide on a **pattern** for valid ZIP codes (e.g., Oregon 5-digit ZIPs).
+>     -   Consider using `stringr::str_length()`, `stringr::str_detect()` with a regular expression pattern, and `stringr::str_pad()` if necessary.
 
 ```{r}
 bids<- bids%>%mutate(ZIP_trim=DEVICE_GEO_ZIP_char %>% as.character() %>% str_trim(), DEVICE_GEO_ZIP_clean = case_when(str_detect(ZIP_trim, "^97[0-9]{3}$") ~ ZIP_trim, TRUE ~ NA_character_))
@@ -299,10 +300,10 @@ bids%>% count(DEVICE_GEO_ZIP_clean, sort=TRUE) %>% head(20)
 
 ```
 
-> 4. Create a cleaned version (e.g., `DEVICE_GEO_ZIP_clean`) that:
->    - Trims whitespace,
->    - Converts sentinel codes to `NA`,
->    - Enforces your chosen ZIP pattern.
+> 4.  Create a cleaned version (e.g., `DEVICE_GEO_ZIP_clean`) that:
+>     -   Trims whitespace,
+>     -   Converts sentinel codes to `NA`,
+>     -   Enforces your chosen ZIP pattern.
 
 ```{r}
 bids<- bids%>%mutate(ZIP_trim=DEVICE_GEO_ZIP_char %>% as.character() %>% str_trim(), DEVICE_GEO_ZIP_clean = case_when(str_detect(ZIP_trim, "^97[0-9]{3}$") ~ ZIP_trim, TRUE ~ NA_character_))
@@ -311,22 +312,21 @@ bids%>% count(DEVICE_GEO_ZIP_clean, sort=TRUE) %>% head(20)
 
 ```
 
-> 5. In a short paragraph, describe your rule and why it is reasonable given the context (Oregon-only data).
+> 5.  In a short paragraph, describe your rule and why it is reasonable given the context (Oregon-only data).
 
-*HENRY FINISH*
-Valid Oregon zip codes are 5 digits and have pattern "97xxx". All others are NA.
+We defined valid zip codes as codes matching the five-digit Oregon ZIP pattern, which all begin with the two-digit code 97, with three additional digits following. Zip codes that were the undesired length (too short or long) as well as entries containing sentinel codes were set to NA because they fail to meet the validity requirement. In other words, these invalid codes cannot describe actual Oregon locations. Again, since we are dealing with bid restricted to Oregon, this rule is reasonable and maintains geographic accuracy.
 
 ## RESPONSE_TIME: prefixes and extra characters
 
 The `RESPONSE_TIME` variable may include:
 
-- A **text prefix** (e.g., “RESPONSE_TIME:” or typo’d variants),
-- Extra characters at the end (e.g., punctuation),
-- Numeric content representing a duration.
+-   A **text prefix** (e.g., “RESPONSE_TIME:” or typo’d variants),
+-   Extra characters at the end (e.g., punctuation),
+-   Numeric content representing a duration.
 
 > **Tasks:**
 >
-> 1. Use a small `sample()` of `RESPONSE_TIME` to inspect the raw patterns.
+> 1.  Use a small `sample()` of `RESPONSE_TIME` to inspect the raw patterns.
 
 ```{r}
 set.seed(123)
@@ -334,11 +334,11 @@ sample(bids$RESPONSE_TIME, size=20)
 
 ```
 
-> 2. Write a rule for how to:
->    - Remove any “RESPONSE_TIME:” prefixes (including likely typos),
->    - Strip extra non-numeric characters from the end,
->    - Convert the remaining content to a numeric type.
-> 3. Implement your rule in a cleaned variable (e.g., `RESPONSE_TIME_clean`) using `stringr::str_replace()` or related functions and `as.numeric()`.
+> 2.  Write a rule for how to:
+>     -   Remove any “RESPONSE_TIME:” prefixes (including likely typos),
+>     -   Strip extra non-numeric characters from the end,
+>     -   Convert the remaining content to a numeric type.
+> 3.  Implement your rule in a cleaned variable (e.g., `RESPONSE_TIME_clean`) using `stringr::str_replace()` or related functions and `as.numeric()`.
 
 ```{r}
 bids <- bids%>% mutate(RESPONSE_TIME_char = as.character(RESPONSE_TIME), RESPONSE_TIME_trim = str_trim(RESPONSE_TIME_char), RESPONSE_TIME_strip = str_replace(RESPONSE_TIME_trim, "^[^0-9.-]*", ""), RESPONSE_TIME_str=str_replace(RESPONSE_TIME_strip, "[^0-9.-]+$", ""), RESPONSE_TIME_clean = as.numeric(RESPONSE_TIME_str))
@@ -347,7 +347,7 @@ summary(bids$RESPONSE_TIME_clean)
 
 ```
 
-> 4. Count how many `NA`s you get in `RESPONSE_TIME_clean` and briefly interpret what those `NA`s mean.
+> 4.  Count how many `NA`s you get in `RESPONSE_TIME_clean` and briefly interpret what those `NA`s mean.
 
 ```{r}
 na_response <- sum(is.na(bids$RESPONSE_TIME_clean))
@@ -355,11 +355,13 @@ na_response
 
 
 ```
-*HENRY FINISH*
 
-> 5. Connect this to the idea of **regular-expression patterns** as a tool for enforcing validity.
+NA values would correspond to entries in the original variable RESPONSE_TIME that contained extra non-numeric information or were so distorted that the numeric portion couldn't be extracted cleanly. Fortunately, when we run the code we see that the na_response function produces ZERO missing values. Therefore, we know that once prefixes and extra characters were removed from RESPONSE_TIME, we were left with valid numeric content in each and every entry.
 
-*HENRY FINISH (Regular expressions like ^[^0-9.-] allow parsing of specific characters in specific patterns* 
+> 5.  Connect this to the idea of **regular-expression patterns** as a tool for enforcing validity.
+
+When cleaning the data, we relied heavily on regular-expression patterns to isolate the numeric portion of RESPONSE_TIME and remove unwanted characters. The pattern ^[^0-9.-]* was used to remove non-numeric characters at the beginning of the string (prefixes). The pattern ^[^0-9.-]+$ was used to remove unwanted characters from the end of the string. Thus, these regular-expression patterns function as filters of validity, as they ensure that the targeted numeric content of each entry is the only content remaining when converting RESPONSE_TIME to RESPONSE_TIME_clean.
+
 
 # Date–Time Cleaning: TIMESTAMP (20–30 minutes)
 
@@ -367,15 +369,15 @@ The `TIMESTAMP` field records when a bid occurred, but the **format is inconsist
 
 Useful tools:
 
-- `as.character()`
-- `stringr::str_detect()`
-- `lubridate::parse_date_time()`, `lubridate::ymd_hms()`, `lubridate::mdy_hms()`
+-   `as.character()`
+-   `stringr::str_detect()`
+-   `lubridate::parse_date_time()`, `lubridate::ymd_hms()`, `lubridate::mdy_hms()`
 
 ## Inspect TIMESTAMP patterns
 
 > **Tasks:**
 >
-> 1. Look at a small random sample of `TIMESTAMP` values.
+> 1.  Look at a small random sample of `TIMESTAMP` values.
 
 ```{r}
 library(dplyr)
@@ -387,7 +389,7 @@ sample(bids$TIMESTAMP,size=20)
 
 ```
 
-> 2. Use `stringr::str_detect()` to count how many timestamps use `"-"` versus `"/"` in the date.
+> 2.  Use `stringr::str_detect()` to count how many timestamps use `"-"` versus `"/"` in the date.
 
 ```{r}
 bids<-bids%>%mutate(TIMESTAMP_char = as.character(TIMESTAMP))
@@ -396,24 +398,24 @@ bids%>%summarise(num_dash=sum(str_detect(TIMESTAMP_char, "-"), na.rm=TRUE), num_
 
 ```
 
-> 3. Summarize in 1–2 sentences what you observe.
+> 3.  Summarize in 1–2 sentences what you observe.
 
-*HENRY FINISH*
+In the small sample of TIMESTAMP values, we see that most entries are in the desired format (YYYY-MM-DD), but one row contains an NA in the date section and we see some time stamps with unexpected zeros (e.g. 22:0:25). When performing the pattern counts, we see that 421,614 rows use the hyphenated format, while only 1,157 rows use slashes as opposed to hyphens. Therefore, the majority of our data is standardized, but still includes a noteworthy chunk of corrupted formats that should be cleaned before proceeding.
 
 ## Parse TIMESTAMP into a POSIXct variable
 
 > **Tasks:**
 >
-> 1. Use `lubridate::parse_date_time()` (or similar) to create `TIMESTAMP_clean`:
->    - Allow for multiple possible formats (e.g., one order for `ymd HMS` and one for `mdy HMS` to see examples scroll paste `?lubridate::parse_date_time()` in your console and scroll all the way to the bottom of the function's help tab),
->    - Specify a time zone (e.g., `"UTC"`).
+> 1.  Use `lubridate::parse_date_time()` (or similar) to create `TIMESTAMP_clean`:
+>     -   Allow for multiple possible formats (e.g., one order for `ymd HMS` and one for `mdy HMS` to see examples scroll paste `?lubridate::parse_date_time()` in your console and scroll all the way to the bottom of the function's help tab),
+>     -   Specify a time zone (e.g., `"UTC"`).
 
 ```{r}
 bids<-bids%>% mutate(TIMESTAMP_clean = parse_date_time(TIMESTAMP_char, orders = c("ymd HMS", "ymd HM", "mdy HMS", "mdy HM"), tz="UTC"))
 
 ```
 
-> 2. Count how many `NA`s result from parsing.
+> 2.  Count how many `NA`s result from parsing.
 
 ```{r}
 sum(is.na(bids$TIMESTAMP_clean))
@@ -421,7 +423,7 @@ sum(is.na(bids$TIMESTAMP_clean))
 
 ```
 
-> 3. Use `summary()` or `range()` to examine the minimum and maximum of `TIMESTAMP_clean`.
+> 3.  Use `summary()` or `range()` to examine the minimum and maximum of `TIMESTAMP_clean`.
 
 ```{r}
 summary(bids$TIMESTAMP_clean)
@@ -429,11 +431,12 @@ range(bids$TIMESTAMP_clean, na.rm = TRUE)
 
 ```
 
-> 4. Briefly comment on:
->    - Whether the time range seems reasonable,
->    - What kinds of entries failed to parse (if any).
+> 4.  Briefly comment on:
+>     -   Whether the time range seems reasonable,
+>     -   What kinds of entries failed to parse (if any).
 
-*HENRY FINISH (entires that failed to parse didnt abide the time format standards above)*
+The parsed time stamps range from October 21, 2025 at 20:49:05 to October 22, 2025 at 04:32:59. The data set contains bids from a short time period, so this window seems very reasonable. We do see that a whopping 21,198 rows failed to parse. The entries that failed to parse did not match the accepted formats for time stamps. These entries include time stamps that are missing full date components or proper separators. Thus, these entries appear as NA when the time stamp variable is cleaned.
+
 # Keys, Duplicates, and Out-of-Range Values (20–30 minutes)
 
 ## Candidate keys and duplicates
@@ -442,15 +445,18 @@ Using your earlier reasoning:
 
 > **Tasks:**
 >
-> 1. Choose one variable or a combination of variables that you **believe should uniquely identify** a row (a key).
-> 2. Use `dplyr::count()` to check whether that key is truly unique or if there are duplicates.
+> 1.  Choose one variable or a combination of variables that you **believe should uniquely identify** a row (a key).
+
+We select AUCTION_ID as our initial candidate key.
+
+> 2.  Use `dplyr::count()` to check whether that key is truly unique or if there are duplicates.
 
 ```{r}
 bids %>% count(AUCTION_ID) %>% filter(n>1)
 
 ```
 
-> 3. Check for **full-row duplicates** using `dplyr::distinct()` or by counting occurrences across all columns.
+> 3.  Check for **full-row duplicates** using `dplyr::distinct()` or by counting occurrences across all columns.
 
 ```{r}
 bids_dup <- bids %>% count(across(everything()), name="n") %>% filter(n>1)
@@ -460,11 +466,14 @@ bids_dup %>% head()
 
 ```
 
-> 4. Decide on a rule for handling duplicates:
->    - Drop exact duplicates?
->    - Keep first occurrence and drop the rest?
->    - Something else?
-> 5. Implement your rule and create a de-duplicated dataset (e.g., `bids_nodup`).
+> 4.  Decide on a rule for handling duplicates:
+>     -   Drop exact duplicates?
+>     -   Keep first occurrence and drop the rest?
+>     -   Something else?
+
+We decided to drop only exact duplicates, choosing to retain entries that differ in any column. Thus, we will keep rows that share the same AUCTION_ID, as long as there is at least one difference in the other columns.
+
+> 5.  Implement your rule and create a de-duplicated dataset (e.g., `bids_nodup`).
 
 ```{r}
 bids_nodup<- bids %>% distinct()
@@ -473,8 +482,9 @@ nrow(bids_nodup)
 bids_nodup %>% count(across(everything()), name="n") %>% filter(n>1)
 ```
 
-> 6. In 2–3 sentences, explain your choice and connect it to the **uniqueness** dimension of data quality.
-*HENRY FINISH (full row duplicates dropped, leaving 1 copy. Same auction ID with different values kept)*
+> 6.  In 2–3 sentences, explain your choice and connect it to the **uniqueness** dimension of data quality.
+
+We chose to drop only exact, or full row duplicates, keeping rows that shared the same AUCTION_ID but differed in other areas. This method clearly improves the uniqueness dimension of data quality by removing duplicates, and thereby securing that each row represents a distinct bid. Removing rows with the same AUCTION_ID but different entries in other fields would lead us to unnecessarily remove data, as the same AUCTION_ID can legitimately appear multiple times.
 
 ## Out-of-range latitude/longitude (optional but recommended)
 
@@ -482,7 +492,7 @@ Look at `DEVICE_GEO_LAT` and `DEVICE_GEO_LONG`.
 
 > **Tasks:**
 >
-> 1. Use `summary()` or `dplyr::summarise()` to get the minimum and maximum latitude and longitude.
+> 1.  Use `summary()` or `dplyr::summarise()` to get the minimum and maximum latitude and longitude.
 
 ```{r}
 bids %>% summarise(min_lat = min(DEVICE_GEO_LAT, na.rm=TRUE), max_lat = max(DEVICE_GEO_LAT, na.rm=TRUE), min_long = min(DEVICE_GEO_LONG, na.rm=TRUE), max_long = max(DEVICE_GEO_LONG, na.rm=TRUE))
@@ -491,7 +501,7 @@ bids %>% summarise(min_lat = min(DEVICE_GEO_LAT, na.rm=TRUE), max_lat = max(DEVI
 
 ```
 
-> 2. Compare the ranges to what you know about **Oregon’s** geographic coordinates (you can approximate based on general US geography; no need for exact boundaries).
+> 2.  Compare the ranges to what you know about **Oregon’s** geographic coordinates (you can approximate based on general US geography; no need for exact boundaries).
 
 ```{r}
 lat_min <- 42
@@ -501,16 +511,16 @@ long_max <- -116
 
 ```
 
-> 3. Decide which coordinates are clearly **implausible**.
+> 3.  Decide which coordinates are clearly **implausible**.
 
 ```{r}
 bids %>% filter(DEVICE_GEO_LONG < long_min) %>% select(DEVICE_GEO_LAT,DEVICE_GEO_LONG) %>%arrange(DEVICE_GEO_LONG)
 
 ```
 
-> 4. Define rules to create cleaned versions (e.g., `DEVICE_GEO_LAT_clean`, `DEVICE_GEO_LONG_clean`) where:
->    - Plausible values are kept,
->    - Implausible values are set to `NA` or corresponding rows are removed.
+> 4.  Define rules to create cleaned versions (e.g., `DEVICE_GEO_LAT_clean`, `DEVICE_GEO_LONG_clean`) where:
+>     -   Plausible values are kept,
+>     -   Implausible values are set to `NA` or corresponding rows are removed.
 
 ```{r}
 lat_min <- 42
@@ -524,9 +534,9 @@ bids %>% summarise(min_lat_clean = min(DEVICE_GEO_LAT_clean, na.rm=TRUE), max_la
 
 ```
 
-> 5. Document the rules you used and why.
+> 5.  Document the rules you used and why.
 
-*HENRY FINISH (removed values outside oregon boundaries)*
+We identified any latitudinal or longitudinal values that fell outside the geographic boundaries of Oregon and set those values to NA. Specifically, we kept latitudes between 42 and 47 degrees, and longitudes between -125 and -116 degrees. This filtered out values like -133 degrees and -134 degrees that physically cannot occur within Oregon. It is pretty clear how these restrictions improve validity of the location data, as they ensure that the only entries remaining in the set contain data that is geographically plausible.
 
 # Creating a Final Cleaned Dataset (10–15 minutes)
 
@@ -534,9 +544,9 @@ Now pull everything together.
 
 > **Tasks:**
 >
-> 1. Create a final cleaned dataset (e.g., `bids_clean`) that:
->    - Uses your cleaned variables (`PRICE_final`, `DEVICE_GEO_REGION_clean`, `DEVICE_GEO_ZIP_clean`, `RESPONSE_TIME_clean`, `TIMESTAMP_clean`, cleaned lat/long, etc.),
->    - Drops unnecessary intermediate columns (e.g., `_raw`, helper strings) that you don’t need for analysis.
+> 1.  Create a final cleaned dataset (e.g., `bids_clean`) that:
+>     -   Uses your cleaned variables (`PRICE_final`, `DEVICE_GEO_REGION_clean`, `DEVICE_GEO_ZIP_clean`, `RESPONSE_TIME_clean`, `TIMESTAMP_clean`, cleaned lat/long, etc.),
+>     -   Drops unnecessary intermediate columns (e.g., `_raw`, helper strings) that you don’t need for analysis.
 
 ```{r}
 bids_clean<- bids %>% select(AUCTION_ID, TIMESTAMP_clean, DATE_UTC, PUBLISHER_ID, DEVICE_TYPE, DEVICE_GEO_CITY, DEVICE_GEO_REGION_clean, DEVICE_GEO_ZIP_clean, DEVICE_GEO_LAT_clean, DEVICE_GEO_LONG_clean, PRICE_final, REQUESTED_SIZES, SIZE, RESPONSE_TIME_clean,BID_WON)
@@ -550,21 +560,23 @@ glimpse(bids_final)
 
 ```
 
-> 2. Check the structure of `bids_clean` with `dplyr::glimpse()`.
+> 2.  Check the structure of `bids_clean` with `dplyr::glimpse()`.
 
 ```{r}
 glimpse(bids_final)
 
 ```
 
-> 3. Optionally, write the cleaned dataset to disk (for your own future use) using something like `save()` (see `?save` for its use and an example) to save in `.RData` format **but do not commit the cleaned data file** to the remote repository.
+> 3.  Optionally, write the cleaned dataset to disk (for your own future use) using something like `save()` (see `?save` for its use and an example) to save in `.RData` format **but do not commit the cleaned data file** to the remote repository.
 
 ```{r}
 # Your code here (optional)
 
 ```
 
-> 4. In a short paragraph, describe what your final cleaned dataset now represents and what major issues have been addressed.
+> 4.  In a short paragraph, describe what your final cleaned dataset now represents and what major issues have been addressed.
+
+The final cleaned data set represents a standardized collection of bid-level records. In this final data set, all major numeric, categorical, geographic, AND time stamp variables have been cleaned and thus validated. Invalid values—such as incorrectly formatted time stamps, incorrectly formatted zip codes, and extreme CPM prices—have been corrected or set to NA to preserve data validity. Additionally, exact duplicate rows were dropped, leaving a data set where each row reflects a distinct bid event. Overall, these decisions helped us to improve the validity, completeness, and uniqueness of the data, priming it for further analysis.
 
 # Data Cleaning Log & Reflection (10–15 minutes)
 
@@ -575,7 +587,7 @@ Create a succinct table summarizing the main problems and fixes.
 Use the template below and fill it in with your team’s work. **One row (PRICE) is completed as an example; you should complete the remaining rows yourselves.**
 
 | Variable | Problem Detected (brief) | Data Quality Dimension(s) | Cleaning Action (brief) |
-|----------|-------------------------|---------------------------|--------------------------|
+|------------------|------------------|-------------------|------------------|
 | PRICE | Includes non-numeric characters | Validity | Extract numeric portion and convert to numeric |
 | DEVICE_GEO_REGION | *(team describes)* | *(team selects)* | *(team describes)* |
 | DEVICE_GEO_ZIP | *(team describes)* | *(team selects)* | *(team describes)* |
@@ -587,7 +599,7 @@ Use the template below and fill it in with your team’s work. **One row (PRICE)
 
 Write a short reflection addressing:
 
-- Which data cleaning tasks were the most **time-consuming** or **surprising**?
-- Which functions or workflows (e.g., `mutate()`, `case_when()`, `str_*()`, `parse_date_time()`, `distinct()`) were most valuable?
-- One thing you will do **differently** the next time you receive a new messy dataset.
-- Whether/how you used generative AI for this lab and how it affected your understanding.
+-   Which data cleaning tasks were the most **time-consuming** or **surprising**?
+-   Which functions or workflows (e.g., `mutate()`, `case_when()`, `str_*()`, `parse_date_time()`, `distinct()`) were most valuable?
+-   One thing you will do **differently** the next time you receive a new messy dataset.
+-   Whether/how you used generative AI for this lab and how it affected your understanding.
