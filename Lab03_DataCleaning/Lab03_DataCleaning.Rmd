@@ -589,12 +589,11 @@ Use the template below and fill it in with your team’s work. **One row (PRICE)
 | Variable | Problem Detected (brief) | Data Quality Dimension(s) | Cleaning Action (brief) |
 |------------------|------------------|-------------------|------------------|
 | PRICE | Includes non-numeric characters | Validity | Extract numeric portion and convert to numeric |
-| DEVICE_GEO_REGION | *(team describes)* | *(team selects)* | *(team describes)* |
-| DEVICE_GEO_ZIP | *(team describes)* | *(team selects)* | *(team describes)* |
-| RESPONSE_TIME | *(team describes)* | *(team selects)* | *(team describes)* |
-| TIMESTAMP | *(team describes)* | *(team selects)* | *(team describes)* |
-| Other variable(s) | *(optional)* | *(optional)* | *(optional)* |
-
+| DEVICE_GEO_REGION | Inconsistent region codes | Consistency, Validity | Converted all reasonable variations of ‘OR’, Marked anything unrecognizable as NA.|
+| DEVICE_GEO_ZIP | | ZIP codes were inconsistent | Validity | Keep ZIPs matching the Oregon 5-digit “97xxx” format; set all others (too short, too long, or sentinel codes) to NA |
+| RESPONSE_TIME | Extra non-numeric characters or prefixes preventing clean numeric extraction | Validity | Used regular-expression patterns to strip unwanted characters and isolate the numeric value; since all cleaned entries were valid, no NA values were produced.
+| TIMESTAMP | A large number of timestamp values were incomplete or used incorrect formats (missing date elements or improper separators), causing them to fail parsing | Validity | Parse timestamps using accepted formats; entries that cannot be parsed are set to NA |
+| Other variable(s) | Some AUCTION_IDs appeared more than once and a number of rows were exact full-row duplicates | Uniqueness | Removed exact duplicate rows while keeping rows that shared the same AUCTION_ID but differed in other|
 ## Reflection (5–8 sentences)
 
 Write a short reflection addressing:
