@@ -602,3 +602,5 @@ Write a short reflection addressing:
 -   Which functions or workflows (e.g., `mutate()`, `case_when()`, `str_*()`, `parse_date_time()`, `distinct()`) were most valuable?
 -   One thing you will do **differently** the next time you receive a new messy dataset.
 -   Whether/how you used generative AI for this lab and how it affected your understanding.
+
+The most time-consuming work was writing regular expressions to turn messy strings into valid values, and it was surprising how much hidden bad data they revealed. Our most useful tools were the dplyr and stringr workflows—especially mutate(), case_when(), str_*(), parse_date_time(), and distinct()/count(). We did use AI to help debug errors, but next time we’ll first try to understand and fix issues ourselves and only lean on AI as a backup.
